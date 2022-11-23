@@ -1,45 +1,140 @@
 ---
-title: "Your A4 Report Title (TODO: Revise title)"
-author: "Your Name"
+title: "Assignment 4"
+author: "Brian Yoo"
 date: '2022-11-01'
 output: html_document
 ---
 
-```{r echo=FALSE, eval=TRUE, message=FALSE}
-source("../source/a4-helpers.R")
-source("../source/analysis.R")
+### Abstract 
+
+This report recalls the dataset that contains information on the United State jails. The dataset contains the different kinds of population in jail and other counts/rates related to the US prison.
+
+### Introduction 
+
+The data from this report can reveal patterns of inequality. The total imprisonment value of certain groups of people may proportionately differ and there may be a significant gap between certain groups who are susceptible to imprisonment. It also tackles the issue of incarceration. In certain years, there are more imprisonment in certain locations. It’s important to understand why this happened and if there is a solution that can be established from the dataset. The dataset provides more than just information on jail counts. It provides other essential details such as the deaths in custody reporting program (DCRP), which helps identify if there is any disproportionality within the population. The direct stakeholders may be the people who are imprisoned; the report from this data is directly focused on them and the attention may impact their treatment in the future. The indirect stakeholders include reporters using this dataset to update news on this topic, law enforcement who need to be cautious of who they arrest, and the US government court who makes the final decision on someone’s imprisonment.
+
+### Data Summary 
+
+Which state has the highest population of black people in jail?
+
+``` {r}
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+
+trend <- read.csv("https://raw.githubusercontent.com/vera-institute/incarceration-trends/master/incarceration_trends.csv")
+state_highest_black <- trend %>% 
+  filter(black_jail_pop == max(na.omit(black_jail_pop))) %>% 
+  pull(state)
 ```
 
-## Abstract 
-[TODO: Include a short abstract (about 50 words)]
+Which year has the highest number of population in jail?
 
-# Test (TODO: Remove before submission!!)
-```{r echo=FALSE}
-q1_string <- test_query1()
-num <- 5
-```
-As you know, this is a markdown report. The [R Markdown Cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf) is **useful!**
+``` {r}
+highest_pop<- trend %>% 
+  filter(total_jail_pop == max(na.omit(total_jail_pop))) %>% 
+  pull(total_jail_pop)
 
-* Here's a test of a dynamic variable. Say **"`r q1_string`!!!** 
-* Here's another test. A vector
-of numbers: `r test_query2(num)`.
-
-Recall that _{r echo=TRUE}_ can be used to display the code, 
-which is very useful when developing and debugging a report. Here's an example: 
-
-```{r echo=TRUE}
-num <- 5
-sum <- sum(test_query2(num))
-print(sum)
+highest_pop_year <- trend %>% 
+  filter(total_jail_pop == max(na.omit(total_jail_pop))) %>% 
+  pull(year)
 ```
 
-## Introduction 
-[TODO]
+Which county has the highest DCRP?
 
-## Data Summary 
-[TODO]
+``` {r}
+dcrp_state <- trend %>%
+  filter(total_jail_pop_dcrp == max(na.omit(total_jail_pop_dcrp))) %>% 
+  pull(state)
 
-[TODO ... other sections ... See Canvas for details]
+dcrp_county <- trend %>% 
+  filter(total_jail_pop_dcrp == max(na.omit(total_jail_pop_dcrp))) %>% 
+  pull(county_name)
+```
 
-_All the very best with your work!_
+These three values helps us learn about the patterns of inequality within the 
+United States. The variable "state_highest_black" shows us which state has the highest population of black people in jail within the United States. The 
+variable "highest_pop_year" shows us which year has the highest number of
+people in jail. Lastly, the variable "dcrp_county" shows us which county has
+the highest rate of death in custody reporting program within the United States.
+
+### Growth of the U.S. Prison Population
+
+``` {r, echo=FALSE}
+get_year_jail_pop <- function() {
+  result <- trend %>% 
+    group_by(year) %>% 
+    filter(total_jail_pop != "NA") %>% 
+    summarise(total_jail_pop = sum(total_jail_pop)) 
+  return(result)
+}
+
+plot_year_jail_pop_us<- function() {
+  ggplot(get_year_jail_pop(), aes(x = year, y = total_jail_pop)) + 
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Increase of Jail Population in U.S. (1970-2018)", 
+       x = "Years", 
+       y = "Total Jail Population")
+}
+
+plot_year_jail_pop_us()
+```
+
+A key pattern shown from this graph is that the number of total people
+imprisoned in jail has increased exponentially in recent years. Starting from 
+1980 to 2010, the number of people in prison has gone up by around 600,000, and
+it's starting to lessen after 2010.
+
+### Growth of Prison Population by State 
+
+``` {r, echo=FALSE}
+
+get_jail_pop_by_states <- function(states) {
+  result <- trend %>% 
+    filter(str_detect(state, paste(states, collapse = "|")) == TRUE) %>% 
+    group_by(year, state) %>% 
+    filter(total_jail_pop != "NA") %>% 
+    summarise(total_jail_pop = sum(total_jail_pop)) 
+  return(result)
+} 
+
+plot_jail_pop_by_states <- function(states) {
+  ggplot(get_jail_pop_by_states(states), aes(x = year, y = total_jail_pop)) + 
+    geom_line(aes(color = state, linetype = state)) +
+    labs(title = "Jail Population in States (1970-2018)", caption = "Jail population for three different states", 
+         x = "Years", 
+         y = "Total Jail Population")
+}
+  
+plot_jail_pop_by_states(c("WA", "OR", "CA"))
+```
+
+This chart shows us a visualization of how the rate of jail population in certain states differ. In this chart there is a comparison between the state of
+California, Oregon, and Washington. The chart shows California had an exponential increase from 1980 to 1990, while Oregon and Washington had a 
+steady linear increase from 1970 to 2018.
+
+
+### Variable Comparison that Reveals Potential Patterns of Inequality
+
+``` {r, echo=FALSE}
+comparison <- trend %>%
+select(year, white_jail_pop, black_jail_pop) %>%
+gather(key = "variable", value = "value", -year, na.rm = TRUE)
+
+ggplot(comparison, aes(x = year, y = value)) + 
+  geom_line(aes(color = variable, linetype = variable)) + 
+  scale_color_manual(values = c("darkred", "steelblue")) +
+  labs(title = "White vs Black Jail Population in U.S. (1970-2018)", 
+       x = "Years", 
+       y = "Total Jail Population")
+```
+
+This chart shows the comparison between the total population of black
+people in jail vs the total population of white people in jail. The chart
+shows that the black population has significantly more number, than the white
+population. The white population is represented by dotted blue lines, while
+the black population is represented by red solid lines.
+
+### A Map that Shows Potential Patterns of Inequality that Vary Geographically
+
 
