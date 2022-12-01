@@ -147,8 +147,9 @@ map1 <- ggplot(data = jail_state, aes(x = long, y = lat, group = group)) +
   geom_polygon(aes(fill = black_jail_pop), color = "black")
 map1
 
-map2 <- map1 + scale_fill_gradient(name = "number of black people in Jail",
-  low = "blue", high = "red", na.value = "grey50") +
+map2 <- map1 + scale_fill_gradient(name = "Population Count",
+  low = "yellow", high = "red", na.value = "grey50") +
+  labs(title = "Black Jail Population in U.S. (2018)") +
   theme(
     axis.text.x= element_blank(),        
     axis.text.y = element_blank(),       
@@ -157,7 +158,6 @@ map2 <- map1 + scale_fill_gradient(name = "number of black people in Jail",
     axis.title.x = element_blank(),
     rect = element_blank())
 map2
-
 
 
 #----------------------------------------------------------------------------#
