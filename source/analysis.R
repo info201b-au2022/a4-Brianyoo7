@@ -1,29 +1,10 @@
-library(tidyverse)
-
-# The functions might be useful for A4
-source("../source/a4-helpers.R")
-
-## Test queries ----
-#----------------------------------------------------------------------------#
-# Simple queries for basic testing
-#----------------------------------------------------------------------------#
-# Return a simple string
-test_query1 <- function() {
-  return ("Hello world")
-}
-
-# Return a vector of numbers
-test_query2 <- function(num=6) {
-  v <- seq(1:num)
-  return(v)
-}
 
 ## Section 2  ---- 
 library(dplyr)
 library(tidyr)
 library(tidyverse)
 
-trend <- read.csv("https://raw.githubusercontent.com/vera-institute/incarceration-trends/master/incarceration_trends.csv")
+trend <- read.csv("https://raw.githubusercontent.com/vera-institute/incarceration-trends/master/incarceration_trends.csv", stringsAsFactors = FALSE)
 #----------------------------------------------------------------------------#
 # Which state has the highest black population in jail?
 
@@ -124,21 +105,6 @@ plot_jail_pop_by_states(c("WA", "OR", "CA"))
 # Total white jail population vs total black jail population
 # Your functions might go here ... <todo:  update comment>
 # See Canvas
-  
-#comparison <- trend %>% 
-  #select(year, white_jail_pop, black_jail_pop) %>%
-  #gather(key = "variable", value = "value", -year) %>% 
-  #arrange(year)
-
-#bargraph <- ggplot(data = comparison) +
-  #geom_bar(aes(x = year, y = value),
-           #fill = variable,
-           #color = variable,
-           #stat = "identity",
-           #position = "dodge") +
-  #labs(title = "White vs Black Jail Population in U.S. (1970-2018)", 
-       #x = "Years", 
-       #y = "Total Jail Population")
 
 comparison <- trend %>%
 select(year, white_jail_pop, black_jail_pop) %>%
@@ -163,14 +129,36 @@ ggplot(comparison, aes(x = year, y = value)) +
 
 library(maps)
 
-map_state <- map_data("usa")
-map_state <- left_join(map_state, trend, by= "region")
+black_jail_data <- trend %>% 
+  select(state, year, black_jail_pop) %>% 
+  filter(year == 2018) %>% 
+  group_by(state) %>% 
+  summarise(black_jail_pop = sum(black_jail_pop, na.rm = TRUE)) %>% 
+  mutate(state_name = tolower(state.name[match(state, state.abb)]))
+
+map_state <- map_data("state") %>% 
+ rename(state_name = region) %>% 
+  left_join(black_jail_data, by= "state_name")
 
 jail_state <- map_state %>% 
   filter(!is.na(map_state$black_jail_pop))
 
-map <- ggplot(data = jail_state, aes(x = long, y = lat, group = group)) +
-  geom_polygon(aes(fill = black_jail_pop), color = "red")
+map1 <- ggplot(data = jail_state, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = black_jail_pop), color = "black")
+map1
+
+map2 <- map1 + scale_fill_gradient(name = "number of black people in Jail",
+  low = "blue", high = "red", na.value = "grey50") +
+  theme(
+    axis.text.x= element_blank(),        
+    axis.text.y = element_blank(),       
+    axis.ticks = element_blank(),       
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank(),
+    rect = element_blank())
+map2
+
+
 
 #----------------------------------------------------------------------------#
 
