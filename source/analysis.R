@@ -11,10 +11,7 @@ trend <- read.csv("https://raw.githubusercontent.com/vera-institute/incarceratio
 state_highest_black <- trend %>% 
   filter(black_jail_pop == max(na.omit(black_jail_pop))) %>% 
   pull(state)
-
-state_highest_white <- trend %>% 
-  filter(white_jail_pop == max(na.omit(white_jail_pop))) %>% 
-  pull(state)
+print(state_highest_black)
 
 # Which year has the highest number of population in jail?
 
@@ -25,6 +22,7 @@ highest_pop<- trend %>%
 highest_pop_year <- trend %>% 
   filter(total_jail_pop == max(na.omit(total_jail_pop))) %>% 
   pull(year)
+print(highest_pop_year)
 
 # Which county has the highest DCRP?
 
@@ -35,6 +33,7 @@ dcrp_state <- trend %>%
 dcrp_county <- trend %>% 
   filter(total_jail_pop_dcrp == max(na.omit(total_jail_pop_dcrp))) %>% 
   pull(county_name)
+print(dcrp_county)
 
 #----------------------------------------------------------------------------#
 
@@ -106,16 +105,23 @@ plot_jail_pop_by_states(c("WA", "OR", "CA"))
 # Your functions might go here ... <todo:  update comment>
 # See Canvas
 
-comparison <- trend %>%
-select(year, white_jail_pop, black_jail_pop) %>%
-gather(key = "variable", value = "value", -year, na.rm = TRUE)
+comparison <- function() {
+  result <- trend %>%
+    select(year, white_jail_pop, black_jail_pop) %>%
+    gather(key = "variable", value = "value", -year, na.rm = TRUE)
+  return(result)
+}
 
-ggplot(comparison, aes(x = year, y = value)) + 
-  geom_line(aes(color = variable, linetype = variable)) + 
-  scale_color_manual(values = c("darkred", "steelblue")) +
-  labs(title = "White vs Black Jail Population in U.S. (1970-2018)", 
-       x = "Years", 
-       y = "Total Jail Population")
+plot_comparison <- function() {
+  ggplot(comparison(), aes(x = year, y = value)) + 
+    geom_line(aes(color = variable, linetype = variable)) + 
+    scale_color_manual(values = c("darkred", "steelblue")) +
+    labs(title = "White vs Black Jail Population in U.S. (1970-2018)", 
+         x = "Years", 
+         y = "Total Jail Population")
+}
+
+plot_comparison()
 
 
 #----------------------------------------------------------------------------#
@@ -140,24 +146,30 @@ map_state <- map_data("state") %>%
  rename(state_name = region) %>% 
   left_join(black_jail_data, by= "state_name")
 
-jail_state <- map_state %>% 
-  filter(!is.na(map_state$black_jail_pop))
+jail_state <- function () {
+  result <- map_state %>% 
+    filter(!is.na(map_state$black_jail_pop))
+  return(result)
+}
 
-map1 <- ggplot(data = jail_state, aes(x = long, y = lat, group = group)) +
-  geom_polygon(aes(fill = black_jail_pop), color = "black")
-map1
+map1 <- function() {
+  ggplot(jail_state(), aes(x = long, y = lat, group = group)) +
+    geom_polygon(aes(fill = black_jail_pop), color = "black")
+}
 
-map2 <- map1 + scale_fill_gradient(name = "Population Count",
-  low = "yellow", high = "red", na.value = "grey50") +
-  labs(title = "Black Jail Population in U.S. (2018)") +
-  theme(
-    axis.text.x= element_blank(),        
-    axis.text.y = element_blank(),       
-    axis.ticks = element_blank(),       
-    axis.title.y = element_blank(),
-    axis.title.x = element_blank(),
-    rect = element_blank())
-map2
+plot_map2 <- function() {
+  map1() + scale_fill_gradient(name = "Population Count",
+                               low = "yellow", high = "red", na.value = "grey50") +
+    labs(title = "Black Jail Population in U.S. (2018)") +
+    theme(
+      axis.text.x= element_blank(),        
+      axis.text.y = element_blank(),       
+      axis.ticks = element_blank(),       
+      axis.title.y = element_blank(),
+      axis.title.x = element_blank(),
+      rect = element_blank())
+} 
+plot_map2()
 
 
 #----------------------------------------------------------------------------#
